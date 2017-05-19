@@ -1,7 +1,6 @@
 package com.piedra.utils;
 
 import com.piedra.annotation.ExcelImport;
-import com.piedra.bean.User;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.util.HSSFColor;
@@ -20,20 +19,20 @@ import java.util.*;
  * @author linwb
  * @since 2017-05-18
  */
-public class ExcelImportUtil {
+public class ExcelImportUtil<T> {
     private static final Logger logger = LoggerFactory.getLogger(ExcelImportUtil.class);
 
     /** 导入的错误文件的位置 后面加上时间戳 ，文件名加上 _error /usr/local/importFiles */
     private static final String ERROR_FILE_PATH = "C:\\Users\\Administrator\\Desktop\\importFiles\\";
 
     /** 导入的实体要映射成何种类型的数据 */
-    private Class clazz;
+    private Class<T> clazz;
     /** 列->字段名称的映射关系 */
     private Map<String,String> colFieldMap = new HashMap<>();
 
 
     /** 成功的记录 */
-    private List<Object> successRows = new ArrayList<>();
+    private List<T> successRows = new ArrayList<>();
     /** 错误的行数 */
     private int errorLineCnt = 0;
     /** 错误数据的文件路径 */
@@ -43,7 +42,7 @@ public class ExcelImportUtil {
         return errorLineCnt;
     }
 
-    public List<Object> getSuccessRows() {
+    public List<T> getSuccessRows() {
         return successRows;
     }
 
@@ -51,7 +50,7 @@ public class ExcelImportUtil {
         return errorFilePath;
     }
 
-    public ExcelImportUtil(Class clazz){
+    public ExcelImportUtil(Class<T> clazz){
         this.clazz = clazz;
 
         // 通过解析Clazz的annotation来映射 excel列和字段的映射关系
@@ -103,13 +102,13 @@ public class ExcelImportUtil {
 
             CellStyle cellStyle = wb.createCellStyle();
             Font font = wb.createFont();
-            font.setColor(HSSFColor.RED.index);
+            font.setColor(HSSFColor.HSSFColorPredefined.RED.getIndex());
             cellStyle.setFont(font);
 
 
             int rn = sheet.getLastRowNum();
             for(int rowIndex=startRow; rowIndex<rn; rowIndex++){
-                Object obj = clazz.newInstance();
+                T obj = clazz.newInstance();
                 Row row = sheet.getRow(rowIndex);
                 try {
                     parseRow2Object(row, obj);
@@ -120,6 +119,9 @@ public class ExcelImportUtil {
                     String errorMsg = e.getMessage();
                     if(StringUtils.isBlank(errorMsg) && e.getCause()!=null){
                         errorMsg = e.getCause().getMessage();
+                    }
+                    if(StringUtils.isBlank(errorMsg)){
+                        errorMsg = "导入出错";
                     }
                     errCell.setCellValue(errorMsg);
 
@@ -147,23 +149,14 @@ public class ExcelImportUtil {
      * @throws Exception    抛出异常
      */
     @SuppressWarnings("unchecked")
-    private void parseRow2Object(Row row, Object obj) throws Exception {
+    private void parseRow2Object(Row row, T obj) throws Exception {
         Class clazz = obj.getClass();
-
         boolean canAdd = false;
-
         int colLen = colFieldMap.keySet().size();
         for(int colIndex=0; colIndex<colLen; colIndex++) {
             Cell cell =  row.getCell(colIndex);
-
-            String cellVal ;
-            if(CellType.NUMERIC==cell.getCellTypeEnum()) {
-                cellVal = ""+cell.getNumericCellValue();
-                cellVal = cellVal.substring(0,cellVal.lastIndexOf("."));
-            } else {
-                cellVal = cell.getStringCellValue();
-            }
-
+            cell.setCellType(CellType.STRING);
+            String cellVal = cell.getStringCellValue();
             if(StringUtils.isBlank(cellVal)){
                 continue ;
             }
@@ -171,12 +164,9 @@ public class ExcelImportUtil {
             if(StringUtils.isBlank(fieldName)){
                 continue ;
             }
-
             clazz.getMethod("set"+Character.toUpperCase(fieldName.charAt(0))+fieldName.substring(1), new Class[]{String.class}).invoke(obj, cellVal);
-
             canAdd = true;
         }
-
         if(canAdd) {
             successRows.add(obj);
         }
@@ -203,11 +193,14 @@ public class ExcelImportUtil {
 
 
     public static void main(String[] args) throws  Exception{
-        File f = new File("C:\\Users\\Administrator\\Desktop\\名单.xls");
-        ExcelImportUtil util = new ExcelImportUtil(User.class);
-        util.importExcel(f, 2);
+//        File f = new File("C:\\Users\\Administrator\\Desktop\\名单.xls");
+//        ExcelImportUtil<User> util = new ExcelImportUtil<>(User.class);
+//        util.importExcel(f, 2);
+//
+//        System.out.println("SUCCESS");
 
-        System.out.println("SUCCESS");
+
+
     }
 
 }
