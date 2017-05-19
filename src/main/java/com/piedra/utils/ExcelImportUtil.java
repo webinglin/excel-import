@@ -1,6 +1,7 @@
 package com.piedra.utils;
 
 import com.piedra.annotation.ExcelImport;
+import com.piedra.bean.User;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.util.HSSFColor;
@@ -193,13 +194,12 @@ public class ExcelImportUtil<T> {
 
 
     public static void main(String[] args) throws  Exception{
-//        File f = new File("C:\\Users\\Administrator\\Desktop\\名单.xls");
-//        ExcelImportUtil<User> util = new ExcelImportUtil<>(User.class);
-//        util.importExcel(f, 2);
-//
-//        System.out.println("SUCCESS");
+        File f = new File("C:\\Users\\Administrator\\Desktop\\名单.xls");
+        ExcelImportUtil<User> util = new ExcelImportUtil<>(User.class);
+        util.importExcel(f, 2);
 
-
+        List<User> userList = util.getSuccessRows();
+        System.out.println("SUCCESS");
 
     }
 
